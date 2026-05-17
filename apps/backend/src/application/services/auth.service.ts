@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../../config/env';
 import { redisConnection } from '../../infrastructure/queues/queue';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 export interface JwtPayload {
   sub: string;
@@ -39,36 +40,28 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Verify password (in real app, compare hashed password)
-    // For now, we'll assume password validation is done elsewhere
-    // This is a placeholder - actual implementation would use bcrypt
-    const isValidPassword = await this.validatePassword(password, user.passwordHash);
+    const isValidPassword = await this.validatePassword(password, user.passwordHash ?? '');
     if (!isValidPassword) {
       throw new AppError('Invalid credentials', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Check if account is locked
-    if (await this.isAccountLocked(user.id)) {
-      throw new AppError('Account is temporarily locked due to too many failed attempts', 423, 'ACCOUNT_LOCKED');
+    const sessionId = this.generateSessionId();
+    try {
+      await this.storeSession(sessionId, {
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+      });
+    } catch {
+      logger.warn({ userId: user.id }, 'Failed to store session in Redis. Login continues without server-side session.');
     }
 
-    // Create session
-    const sessionId = this.generateSessionId();
-    const sessionData = {
-      userId: user.id,
-      createdAt: new Date().toISOString(),
-      lastActivity: new Date().toISOString(),
-      ipAddress: '', // Would be populated from request in real implementation
-      userAgent: '', // Would be populated from request in real implementation
-    };
-
-    await this.storeSession(sessionId, sessionData);
-
-    // Generate tokens
     const tokens = await this.generateTokenPair(user, sessionId);
-
-    // Record successful login
-    await this.recordLoginAttempt(user.id, true, '');
+    try {
+      await this.recordLoginAttempt(user.id, true, '');
+    } catch {
+      logger.warn({ userId: user.id }, 'Failed to record login attempt');
+    }
 
     return {
       user: {
@@ -124,7 +117,7 @@ export class AuthService {
     });
 
     // Revoke old session
-    await this.revokeSession(sessionId);
+    await this.revokeSessionById(sessionId);
 
     // Generate new tokens
     const tokens = await this.generateTokenPair(user, newSessionId);
@@ -156,8 +149,7 @@ export class AuthService {
       // Revoke the refresh token
       await this.revokeRefreshToken(refreshToken);
       
-      // Revoke the session
-      await this.revokeSession(sessionId);
+      await this.revokeSessionById(sessionId);
     }
   }
 
@@ -234,7 +226,6 @@ export class AuthService {
       role: user.role,
       sessionId,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 900 // 15 minutes
     };
 
     const accessToken = jwt.sign(payload, config.jwt.secret, {
@@ -262,10 +253,8 @@ export class AuthService {
   }
 
   private async validatePassword(password: string, passwordHash: string): Promise<boolean> {
-    // In a real implementation, this would use bcrypt or similar
-    // For now, we'll do a simple comparison (NOT SECURE - just for example)
-    // TODO: Implement proper password hashing with bcrypt
-    return password === passwordHash;
+    if (!passwordHash) return false;
+    return bcrypt.compare(password, passwordHash);
   }
 
   private generateSessionId(): string {
@@ -284,10 +273,6 @@ export class AuthService {
   private async getSession(sessionId: string): Promise<any | null> {
     const data = await redisConnection.get(`${this.SESSION_KEY_PREFIX}${sessionId}`);
     return data ? JSON.parse(data) : null;
-  }
-
-  private async revokeSession(sessionId: string): Promise<void> {
-    await redisConnection.del(`${this.SESSION_KEY_PREFIX}${sessionId}`);
   }
 
   private async revokeRefreshToken(refreshToken: string): Promise<void> {
@@ -329,59 +314,30 @@ export class AuthService {
     });
   }
 
-  async findUserByEmail(email: string) {
-    return await prisma.user.findUnique({
-      where: { email }
-    });
-  }
-
-  async createUser(data: { email: string; password: string; name?: string | null }) {
-    return await prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash: data.password, // TODO: hash password in real implementation
-        name: data.name,
-        role: 'USER',
-      }
-    });
-  }
-
-  async getUserSessions(userId: string) {
-    // In a real implementation, this would query Redis for all sessions for this user
-    // For now, we'll return an empty array
-    return [];
-  }
-
-  async getUserById(userId: string) {
-    return await prisma.user.findUnique({
-      where: { id: userId }
-    });
-  }
-
-  async revokeSession(userId: string, sessionId: string) {
-    // Verify the session belongs to the user before revoking
-    const sessionData = await this.getSession(sessionId);
-    if (sessionData && sessionData.userId === userId) {
-      await this.revokeSessionById(sessionId);
-    }
-  }
-
   async register(data: { email: string; password: string; name?: string | null }) {
-    // Check if user already exists
     const existingUser = await this.findUserByEmail(data.email);
     if (existingUser) {
       throw new AppError('User already exists', 409, 'USER_ALREADY_EXISTS');
     }
 
-    // Create user
     const user = await this.createUser({
       email: data.email,
       password: data.password,
       name: data.name,
     });
 
-    // Generate tokens for the new user
-    const tokens = await this.generateTokenPair(user.id);
+    const sessionId = this.generateSessionId();
+    try {
+      await this.storeSession(sessionId, {
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+      });
+    } catch {
+      logger.warn({ userId: user.id }, 'Failed to store session in Redis. Registration continues without server-side session.');
+    }
+
+    const tokens = await this.generateTokenPair(user, sessionId);
 
     return {
       user: {
@@ -393,8 +349,30 @@ export class AuthService {
     };
   }
 
-  private async revokeSessionById(sessionId: string): Promise<void> {
-    await redisConnection.del(`${this.SESSION_KEY_PREFIX}${sessionId}`);
+  async getSessions(userId: string) {
+    return this.getUserSessions(userId);
+  }
+
+  async getCurrentUser(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        role: true,
+        createdAt: true,
+        subscription: {
+          select: {
+            tier: true,
+            status: true,
+            aiCredits: true,
+            aiCreditsUsed: true,
+          },
+        },
+      },
+    });
   }
 }
 

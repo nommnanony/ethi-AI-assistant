@@ -599,7 +599,7 @@ ${lastConversationHtml || '<div class="empty">Waiting for conversation data...</
 
   // ── RAG System ────────────────────────────────────────────────
 
-  const RAG_API_BASE = 'http://localhost:3001/api/rag';
+  const RAG_API_BASE = 'http://localhost:4000/api/rag';
 
   ipcMain.handle('rag:index', async (_event, projectPath: string, projectName?: string) => {
     try {

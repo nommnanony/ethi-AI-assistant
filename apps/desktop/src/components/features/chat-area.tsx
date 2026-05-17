@@ -28,7 +28,7 @@ export function ChatArea() {
       <div className="flex-1 flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-6xl mb-4">🤖</div>
-          <h2 className="text-xl font-semibold text-text-primary mb-2">Welcome to Natively AI</h2>
+          <h2 className="text-xl font-semibold text-text-primary mb-2">Welcome to EthiAI</h2>
           <p className="text-text-muted">Send a message to start chatting</p>
         </div>
       </div>

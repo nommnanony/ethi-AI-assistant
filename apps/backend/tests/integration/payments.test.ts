@@ -21,7 +21,7 @@ vi.mock('../../src/database/prisma/client.js', () => ({
   },
 }));
 
-vi.mock('../../src/common/logger.js', () => ({
+vi.mock('../../src/shared/logger/logger.service', () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
@@ -32,6 +32,11 @@ vi.mock('../../src/common/logger.js', () => ({
 
 vi.mock('../../src/config/env.js', () => ({
   config: {
+    LOG_LEVEL: 'info',
+    NODE_ENV: 'test',
+    isDev: false,
+    isProd: false,
+    isTest: true,
     jwt: {
       secret: 'test-secret-32-characters-long-for-testing!!',
     },
@@ -94,12 +99,12 @@ describe('Payments API Integration', () => {
         method: 'POST',
         url: '/api/payments/checkout',
         headers: { authorization: 'Bearer mock-token' },
-        payload: {
-          priceId: 'price_pro',
-          successUrl: 'https://app.natively.ai/success',
-          cancelUrl: 'https://app.natively.ai/cancel',
-          tier: 'PRO',
-        },
+         payload: {
+           priceId: 'price_pro',
+           successUrl: 'https://app.ethi-ai/success',
+           cancelUrl: 'https://app.ethi-ai/cancel',
+           tier: 'PRO',
+         },
       });
 
       expect(response.statusCode).toBe(201);
@@ -114,8 +119,8 @@ describe('Payments API Integration', () => {
         url: '/api/payments/checkout',
         payload: {
           priceId: 'price_pro',
-          successUrl: 'https://app.natively.ai/success',
-          cancelUrl: 'https://app.natively.ai/cancel',
+          successUrl: 'https://app.ethi-ai/success',
+          cancelUrl: 'https://app.ethi-ai/cancel',
         },
       });
 
@@ -128,8 +133,8 @@ describe('Payments API Integration', () => {
         url: '/api/payments/checkout',
         payload: {
           priceId: 'price_pro',
-          successUrl: 'https://app.natively.ai/success',
-          cancelUrl: 'https://app.natively.ai/cancel',
+          successUrl: 'https://app.ethi-ai/success',
+          cancelUrl: 'https://app.ethi-ai/cancel',
         },
       });
 

@@ -1,128 +1,86 @@
-# Agent Instructions
+# AGENTS.md
 
-## Monorepo Structure
+## Monorepo (pnpm + Turbo)
 
-```
-apps/
-├── backend/          # Fastify API (@ethi-ai/backend)
-│   └── src/
-│       ├── config/       # Env validation, plugins, modules
-│       ├── common/       # Guards, middleware, filters
-│       ├── database/     # Prisma schema & client
-│       ├── modules/      # Feature modules (auth, ai, users, etc.)
-│       ├── providers/    # AI, transcription, email integrations
-│       ├── services/     # Shared business logic
-│       ├── websocket/    # WebSocket handling
-│       └── workers/      # BullMQ background jobs
-│
-└── desktop/          # Electron + React (ethi-ai-desktop)
-    ├── electron/       # Electron main/preload scripts
-    └── src/            # React app source
-        ├── components/
-        │   ├── ui/           # Reusable UI components
-        │   ├── features/     # Feature-specific components
-        │   └── layout/       # Layout components
-        ├── hooks/            # Custom React hooks
-        ├── lib/              # Utilities
-        ├── pages/             # Route pages
-        ├── services/
-        │   └── api/          # API services
-        ├── store/            # Zustand stores
-        └── types/            # TypeScript types
-```
+Workspaces: `apps/*`, `packages/*`. Root package: `ethi-ai`.
+
+| Path | Tech | Entry |
+|---|---|---|
+| `apps/backend` | Fastify + Prisma + BullMQ | `src/main.ts` (dev via `tsx watch`) |
+| `apps/desktop` | Electron + React + Vite | `electron/main/main.ts` (main), `src/main.tsx` (renderer) |
+| `packages/shared` | Zod schemas, types | `src/index.ts` → builds with `tsup` |
+| `packages/eslint-config` | Shared ESLint rules | — |
+| `packages/tsconfig` | Shared TS configs | `base.json`, `react.json`, `node.json` |
+
+**Desktop is Electron, NOT Tauri.** The README is outdated on this point.
 
 ## Key Commands
 
-### Root (pnpm workspace)
 ```bash
-pnpm dev              # Start all apps (turbo)
-pnpm build            # Build all apps
-pnpm test             # Run all tests (requires Postgres + Redis)
-pnpm lint             # Lint all apps
-pnpm typecheck        # Type-check all (run after build)
-pnpm format           # Format with Prettier
+# Root – all via turbo
+pnpm dev              # everything in parallel
+pnpm build            # dependsOn ^build
+pnpm lint             # eslint across workspace
+pnpm typecheck        # dependsOn ^build (run build first!)
+pnpm test             # dependsOn build (turbo enforces order)
+pnpm format           # prettier --write "**/*.{ts,tsx,js,json,css,md}"
+pnpm clean            # turbo run clean
+pnpm docker:up        # docker compose -f docker/docker-compose.yml up -d
 
-# Database
-pnpm db:generate      # Generate Prisma client
-pnpm db:push          # Push schema to DB
-pnpm db:migrate       # Run migrations
-pnpm db:seed          # Seed data
+# Database (backend)
+pnpm db:generate      # prisma generate
+pnpm db:push          # push schema
+pnpm db:migrate       # migrate dev
+pnpm db:seed          # tsx src/database/seed.ts
 
-# Docker
-pnpm docker:up        # Start Postgres + Redis
-pnpm docker:down      # Stop services
+# Desktop specific
+cd apps/desktop && pnpm build         # vite build only
+cd apps/desktop && pnpm build:electron # tsc electron/ → electron-dist/ + rename to .mjs
+cd apps/desktop && pnpm build:all     # build + build:electron
+cd apps/desktop && pnpm dist          # build:all + electron-builder --win --x64
+cd apps/desktop && pnpm dev           # concurrently vite + electron (wait-on)
 ```
 
-### Backend (apps/backend)
-```bash
-cd apps/backend && pnpm dev          # Start Fastify dev server
-cd apps/backend && pnpm db:studio    # Open Prisma Studio
-```
+**`pnpm typecheck` requires `pnpm build` first** (turbo `dependsOn: ["^build"]`).
+**`pnpm test` requires `pnpm build` first**, plus Postgres + Redis running.
 
-### Desktop (apps/desktop)
-```bash
-cd apps/desktop && pnpm dev           # Start Vite + Electron
-cd apps/desktop && pnpm build         # Build Vite bundle
-cd apps/desktop && pnpm build:electron  # Build Electron main
-cd apps/desktop && pnpm dist          # Package for distribution
-```
+## Testing
 
-## Desktop App Architecture
+- **Backend**: Vitest, `globals: true`, 30s timeout. Needs `DATABASE_URL` pointing to a real test DB.
+- **Desktop**: Vitest + jsdom + `@testing-library/react`. No external services needed.
+- Both read `vitest.config.ts` at workspace root via `vitest.workspace.ts`.
+- No E2E config file on disk despite `pnpm test:e2e` script in backend `package.json`.
 
-The desktop app uses **Electron** (not Tauri):
-- **Routes**: `/`, `/chat`, `/settings`, `/login`, `/register`
-- **State**: Zustand stores for auth, chat, settings, activity
-- **API**: Services in `src/services/api/` for auth, chat, RAG
-- **Components**: UI library in `src/components/ui/`
-- **Features**: Auth forms, chat area, settings panel in `src/components/features/`
+## CI / CD (GitHub Actions)
 
-### Desktop TypeScript Notes
-- Use `.tsx` extension for files with JSX
-- Import types from `../../types` (relative path)
-- Electron main script: `electron-dist/main.mjs` (generated)
-- Entry point: `src/main.tsx`
+Pipeline order (parallel jobs): `lint` → `typecheck` → `test` → `build`.
+- `test` job starts Postgres 16 + Redis 7 services and runs `pnpm db:generate` first.
+- `build` job on ubuntu-latest builds everything.
+- CD pushes backend Docker image to `ghcr.io`, deploys to staging/production via SSH on `main`/`staging` push.
 
-## CI Pipeline (GitHub Actions)
+## Desktop Conventions
 
-Order: `lint` → `typecheck` → `test` → `build`
+- **Imports**: Relative paths only (`../../hooks`, `../ui`). No workspace aliases in source.
+- **Electron**: `tsconfig.electron.json` compiles `electron/` → `electron-dist/`. A rename script copies `.js` → `.mjs` for ESM compliance.
+- **Native module**: `electron/native-module/` (C++ addon for system audio capture + stealth window).
+- **RAG service**: `electron/lib/rag/service.cjs` — standalone Express server on port 3001 (started separately).
+- Vite dev server at `localhost:1420`. Electron waits for Vite via `wait-on`.
+- Build artifacts: Vite → `dist/`, Electron → `electron-dist/`, packaged → `exe-output-v3/`.
 
-Tests require Postgres 16 + Redis 7 services.
+## Backend Conventions
 
-## Conventional Commits
+- Dev: `tsx watch src/main.ts` (no compile step).
+- Build: `tsc && tsc-alias` (resolves `@/` path aliases).
+- Prisma schema: `src/database/prisma/schema.prisma`.
+- Env validation via Zod in `src/config/env.ts`. Required: `DATABASE_URL`, `JWT_SECRET` (≥32 chars), `JWT_REFRESH_SECRET` (≥32 chars).
+- CORS origin defaults to `http://localhost:1420` (desktop).
+- Backend aliases used in tests: `@/`, `@modules/`, `@common/`, `@config/`, `@providers/`, `@services/`, `@database/`, `@shared/`.
 
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `chore:` - Maintenance
-- `docs:` - Documentation
-- `test:` - Tests
-- `refactor:` - Code refactoring
+## Important Gotchas
 
-## Environment Setup
-
-```bash
-cp .env.example apps/backend/.env
-# Required vars:
-# DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET
-# Optional: OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.
-```
-
-## Important Conventions
-
-- **ESLint in monorepo**: May show path resolution errors in IDE but CI uses correct config
-- **TypeScript**: Always run `pnpm typecheck` before committing
-- **Desktop imports**: Use relative paths (`../../hooks`, `../ui`) not workspace aliases
-- **Electron entry**: `electron-dist/main.mjs` (generated, not committed)
-- **Build artifacts**: Vite output in `dist/`, Electron in `electron-dist/`
-
-## Testing Notes
-
-- Backend: Vitest with Prisma test client
-- Desktop: Vitest with React Testing Library
-- E2E: Separate vitest config (`vitest.e2e.config.ts`)
-
-## Development Quirks
-
-- Desktop uses `concurrently` to run Vite + Electron together
-- Vite dev server at `http://localhost:1420`
-- Electron waits for Vite before starting
-- `wait-on` ensures proper startup order
+- **`packages/ui` does not exist** on disk (mentioned in docs but never created).
+- **`vitest.e2e.config.ts` does not exist** on disk (script in `package.json` will fail).
+- ESLint root config uses separate overrides for `apps/backend/` and `apps/desktop/` — IDE path resolution errors are normal; CI uses correct config.
+- Root `.prettierrc`: single quotes, trailing commas, 120 print width, LF line endings. Run `pnpm format` after editing.
+- Conventional commits expected: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`.
+- `.env` goes in `apps/backend/.env` (copied from root `.env.example`).

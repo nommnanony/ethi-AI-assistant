@@ -2,26 +2,23 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { Routes, Route, BrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import { LoginPage, RegisterPage, ChatPage, SettingsPage, DashboardPage } from './pages';
 import { Layout } from './components/layout';
+import { useAuthStore } from './store';
 
 function AuthProvider(_props: { children?: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const stored = localStorage.getItem('auth-storage');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.state?.isAuthenticated && parsed.state?.user) {
-            setIsAuthenticated(true);
-          }
-        }
-      } catch {}
+    const rehydrated = useAuthStore.persist?.hasHydrated?.();
+    if (rehydrated) {
       setIsReady(true);
-    };
-    checkAuth();
+      return;
+    }
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => {
+      setIsReady(true);
+    });
+    return () => unsub?.();
   }, []);
 
   if (!isReady) {

@@ -1,4 +1,4 @@
-export const APP_NAME = 'Natively AI';
+export const APP_NAME = 'EthiAI';
 export const APP_VERSION = '1.0.0';
 export const APP_DESCRIPTION = 'Premium AI desktop assistant for transcription, meetings, and productivity';
 

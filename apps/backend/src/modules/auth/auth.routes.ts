@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { authService } from '../../application/services/auth.service';
-import { registerSchema, loginSchema, refreshSchema } from './auth.validator';
+import { authController } from './auth.controller';
 import { authGuard } from '../../common/guards/auth.guard';
 import { errorService } from '../../shared/error-handling/error.service';
 
@@ -19,33 +18,33 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         },
       },
     } as const,
-    handler: authService.register,
+    handler: authController.register,
   });
 
   app.post('/api/auth/login', {
-    handler: authService.login,
+    handler: authController.login,
   });
 
   app.post('/api/auth/refresh', {
-    handler: authService.refreshToken,
+    handler: authController.refreshToken,
   });
 
   app.post('/api/auth/logout', {
-    handler: authService.logout,
+    handler: authController.logout,
   });
 
   app.get('/api/auth/sessions', {
     preHandler: [authGuard],
-    handler: authService.getSessions,
+    handler: authController.getSessions,
   });
 
   app.delete('/api/auth/sessions/:sessionId', {
     preHandler: [authGuard],
-    handler: authService.revokeSession,
+    handler: authController.revokeSession,
   });
 
   app.get('/api/auth/me', {
     preHandler: [authGuard],
-    handler: authService.getCurrentUser,
+    handler: authController.getCurrentUser,
   });
 }

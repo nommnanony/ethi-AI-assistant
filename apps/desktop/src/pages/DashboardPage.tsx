@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, Badge } from '../components/u
 import { Activity, MessageSquare, Clock, Zap, TrendingUp, Users, RefreshCw, Bot } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSettingsStore } from '../store';
+import { ragService } from '../services/api/rag.service';
 
 interface DashboardStats {
   totalChats: number;
@@ -21,6 +22,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchRagStatus();
     const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -52,6 +54,15 @@ export function DashboardPage() {
       setStats(getDefaultStats());
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRagStatus = async () => {
+    try {
+      const status = await ragService.getStatus();
+      useSettingsStore.getState().setRagStatus(status);
+    } catch {
+      // ignore
     }
   };
 

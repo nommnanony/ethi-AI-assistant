@@ -69,7 +69,7 @@ export function RegisterPage() {
             <Bot className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">Create Account</h1>
-          <p className="text-[#8b949e]">Join Natively AI today</p>
+          <p className="text-[#8b949e]">Join EthiAI today</p>
         </div>
         
         <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6">

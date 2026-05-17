@@ -7,7 +7,7 @@ from loguru import logger
 
 from app.config import settings
 from app.chunker.recursive import RecursiveChunker
-from app.vectorstore.chromadb_store import VectorStore
+from apps.backend.app.chromadb_store import VectorStore
 from app.embeddings.ollama_client import get_ollama_client, OllamaClient
 from app.memory.store import MemoryStore
 

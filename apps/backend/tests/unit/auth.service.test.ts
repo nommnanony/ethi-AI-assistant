@@ -3,31 +3,20 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 
-vi.mock('../../src/database/prisma/client.js', () => ({
-  default: {
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    workspace: {
-      findFirst: vi.fn(),
-    },
-    workspaceMember: {
-      update: vi.fn(),
-    },
-    session: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      deleteMany: vi.fn(),
-      findMany: vi.fn(),
-      delete: vi.fn(),
-    },
+const prismaMock = vi.hoisted(() => ({
+  user: { findUnique: vi.fn(), create: vi.fn() },
+  workspace: { findFirst: vi.fn() },
+  workspaceMember: { update: vi.fn() },
+  session: {
+    findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn(),
+    update: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(), delete: vi.fn(),
   },
 }));
 
-vi.mock('../../src/common/logger.js', () => ({
+vi.mock('../../src/database/prisma/client.js', () => ({}));
+vi.mock('../../src/database/prisma/client', () => ({ prisma: prismaMock, default: prismaMock }));
+
+vi.mock('../../src/shared/logger/logger.service', () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
@@ -39,6 +28,11 @@ vi.mock('../../src/common/logger.js', () => ({
 
 vi.mock('../../src/config/env.js', () => ({
   config: {
+    LOG_LEVEL: 'info',
+    NODE_ENV: 'test',
+    isDev: false,
+    isProd: false,
+    isTest: true,
     jwt: {
       secret: 'test-secret-32-characters-long-for-testing!!',
       refreshSecret: 'test-refresh-secret-32-characters-long-test!',
@@ -48,7 +42,8 @@ vi.mock('../../src/config/env.js', () => ({
   },
 }));
 
-import { authService, AppError } from '../../src/modules/auth/auth.service.js';
+import { authService } from '../../src/application/services/auth.service';
+import { AppError } from '../../src/common/error-handler';
 import prisma from '../../src/database/prisma/client.js';
 
 const mockHexToken = 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';

@@ -130,6 +130,7 @@ export function SettingsPanel() {
     try {
       const status = await ragService.getStatus();
       setRagStatus(status);
+      useSettingsStore.getState().setRagStatus(status);
     } catch (err) {
       console.error('Failed to load RAG status');
     }

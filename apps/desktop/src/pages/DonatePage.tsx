@@ -127,7 +127,7 @@ export function DonatePage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#f85149] to-[#a371f7] flex items-center justify-center">
             <Heart className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">Support Natively AI</h1>
+          <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">Support EthiAI</h1>
           <p className="text-[#8b949e] max-w-md mx-auto">
             Help me keep this project alive and growing. Your support keeps the servers running!
           </p>

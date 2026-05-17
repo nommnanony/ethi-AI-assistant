@@ -42,7 +42,7 @@ export function Layout() {
           {sidebarOpen && (
             <div className="flex items-center gap-2">
               <Bot className="w-6 h-6 text-accent-cyan" />
-              <span className="font-semibold text-text-primary">Natively</span>
+              <span className="font-semibold text-text-primary">EthiAI</span>
             </div>
           )}
           <button

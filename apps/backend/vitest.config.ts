@@ -9,7 +9,7 @@ export default defineConfig({
     testTimeout: 30000,
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://test:test@localhost:5432/natively_test',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/ethi-ai_test',
       JWT_SECRET: 'test-jwt-secret-at-least-32-characters-long-for-testing',
       JWT_REFRESH_SECRET: 'test-refresh-secret-at-least-32-characters-long-here',
     },

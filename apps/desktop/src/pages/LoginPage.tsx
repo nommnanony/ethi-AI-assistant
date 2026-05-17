@@ -45,7 +45,7 @@ export function LoginPage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#58a6ff] to-[#a371f7] flex items-center justify-center">
             <Bot className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">Natively AI</h1>
+          <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">EthiAI</h1>
           <p className="text-[#8b949e]">Your Premium AI Desktop Assistant</p>
         </div>
         
