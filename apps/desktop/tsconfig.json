@@ -1,5 +1,5 @@
 {
-  "extends": "@natively/tsconfig/react.json",
+  "extends": "@ethi/tsconfig/react.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

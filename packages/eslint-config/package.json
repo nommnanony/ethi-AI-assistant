@@ -1,5 +1,5 @@
 {
-  "name": "@natively/eslint-config",
+  "name": "@ethi/eslint-config",
   "version": "1.0.0",
   "private": true,
   "main": "index.js",

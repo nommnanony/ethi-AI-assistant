@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.api.natively.ai
+      url: https://staging.api.ethi.ai
 
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
       - name: Deploy to staging
         run: |
           ssh deploy@${{ secrets.STAGING_HOST }} '
-            cd /opt/natively
+            cd /opt/ethi
             docker compose pull backend
             docker compose up -d --force-recreate backend
             docker image prune -f
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://api.natively.ai
+      url: https://api.ethi.ai
 
     steps:
       - uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
       - name: Deploy to production
         run: |
           ssh deploy@${{ secrets.PROD_HOST }} '
-            cd /opt/natively
+            cd /opt/ethi
             docker compose pull backend
             docker compose up -d --force-recreate backend
             docker image prune -f

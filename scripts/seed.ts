@@ -9,10 +9,10 @@ async function main() {
   // 1. Admin user
   const adminPassword = hashSync('admin123!', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@natively.ai' },
+    where: { email: 'admin@ethi.ai' },
     update: {},
     create: {
-      email: 'admin@natively.ai',
+      email: 'admin@ethi.ai',
       name: 'Admin User',
       passwordHash: adminPassword,
       emailVerified: true,

@@ -24,10 +24,10 @@ const triples = {
 const triple = triples[`${platform}-${arch}`];
 
 if (triple) {
-  const filename = `natively-audio.${triple}.node`;
+  const filename = `ethi-audio.${triple}.node`;
   const paths = [
     join(__dirname, filename),
-    join(__dirname, '..', 'node_modules', 'natively-audio', filename),
+    join(__dirname, '..', 'node_modules', 'ethi-audio', filename),
   ];
   for (const p of paths) {
     if (existsSync(p)) {

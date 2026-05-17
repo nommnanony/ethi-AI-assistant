@@ -1,5 +1,5 @@
 {
-  "name": "@natively/shared",
+  "name": "@ethi/shared",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -27,7 +27,7 @@
     "typescript": "^5.4.0",
     "tsup": "^8.0.0",
     "@types/node": "^20.12.0",
-    "@natively/tsconfig": "workspace:*",
-    "@natively/eslint-config": "workspace:*"
+    "@ethi/tsconfig": "workspace:*",
+    "@ethi/eslint-config": "workspace:*"
   }
 }

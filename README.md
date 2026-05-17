@@ -21,7 +21,7 @@ A production-grade AI desktop assistant with multi-provider AI support, real-tim
 ## Architecture
 
 ```
-natively-ai-assistant/
+ethi-ai-assistant/
 ├── apps/
 │   ├── backend/          # Fastify API server
 │   │   ├── src/

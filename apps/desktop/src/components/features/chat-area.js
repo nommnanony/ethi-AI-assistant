@@ -19,7 +19,7 @@ export function ChatArea() {
         setTimeout(() => setCopiedId(null), 2000);
     };
     if (messages.length === 0) {
-        return (_jsx("div", { className: "flex-1 flex items-center justify-center bg-background", children: _jsxs("div", { className: "text-center", children: [_jsx("div", { className: "text-6xl mb-4", children: "\uD83E\uDD16" }), _jsx("h2", { className: "text-xl font-semibold text-text-primary mb-2", children: "Welcome to Natively AI" }), _jsx("p", { className: "text-text-muted", children: "Send a message to start chatting" })] }) }));
+        return (_jsx("div", { className: "flex-1 flex items-center justify-center bg-background", children: _jsxs("div", { className: "text-center", children: [_jsx("div", { className: "text-6xl mb-4", children: "\uD83E\uDD16" }), _jsx("h2", { className: "text-xl font-semibold text-text-primary mb-2", children: "Welcome to EthiAI" }), _jsx("p", { className: "text-text-muted", children: "Send a message to start chatting" })] }) }));
     }
     return (_jsxs("div", { className: "flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin", children: [messages.map((message) => (_jsx(MessageBubble, { message: message, onCopy: copyToClipboard, copiedId: copiedId }, message.id))), isTyping && _jsx(TypingIndicator, {}), _jsx("div", { ref: messagesEndRef })] }));
 }

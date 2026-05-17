@@ -1,11 +1,11 @@
 {
-  "name": "natively-audio",
+  "name": "ethi-audio",
   "version": "0.1.0",
   "private": true,
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "natively-audio",
+    "name": "ethi-audio",
     "triples": {
       "defaults": true
     }

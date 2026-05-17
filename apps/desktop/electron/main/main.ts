@@ -356,7 +356,7 @@ function registerIpcHandlers() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       };
-      if (!baseUrl) { headers['HTTP-Referer'] = 'https://natively.ai'; headers['X-Title'] = 'CHEAT ME IN'; }
+      if (!baseUrl) { headers['HTTP-Referer'] = 'https://ethi.ai'; headers['X-Title'] = 'CHEAT ME IN'; }
 
       const res = await fetch(endpoint, {
         method: 'POST', headers, body: JSON.stringify({ model: model || 'inclusionai/ring-2.6-1t:free', messages }),
@@ -444,7 +444,7 @@ function registerIpcHandlers() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       };
-      if (!baseUrl) { headers['HTTP-Referer'] = 'https://natively.ai'; headers['X-Title'] = 'CHEAT ME IN'; }
+      if (!baseUrl) { headers['HTTP-Referer'] = 'https://ethi.ai'; headers['X-Title'] = 'CHEAT ME IN'; }
 
       const messages: any[] = [];
       if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
