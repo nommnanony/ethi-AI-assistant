@@ -73,6 +73,11 @@ playwright-report/
 # Agent instructions
 AGENTS.md
 
+# Refactoring/docs
+BACKEND_REFACTORING_SUMMARY.md
+REFACTORING_COMPLETED.md
+SPEC.md
+
 # Electron build artifacts
 apps/desktop/build-output/
 apps/desktop/dist-exe/
