@@ -1,0 +1,82 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+electron-dist/
+build/
+.next/
+out/
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Prisma
+apps/backend/prisma/migrations/
+apps/backend/prisma/*.db
+apps/backend/prisma/*.db-journal
+
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/bin/
+
+# Coverage
+coverage/
+lcov-report/
+*.lcov
+
+# Docker
+docker/volumes/
+docker/data/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Misc
+*.tsbuildinfo
+*.tsbuildinfo.*
+cypress/videos/
+cypress/screenshots/
+test-results/
+playwright-report/
+
+# Electron build artifacts
+apps/desktop/build-output/
+apps/desktop/dist-exe/
+apps/desktop/exe-output-v3/
+apps/desktop/release/
+
+# Temporary files
+tmp/
+temp/
+*.bak

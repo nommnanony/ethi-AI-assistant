@@ -1,0 +1,456 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  UNPAID
+  EXPIRED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  TEAM
+  ENTERPRISE
+}
+
+enum AIProvider {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  GROQ
+  OPENROUTER
+  OLLAMA
+  CUSTOM
+}
+
+enum AIModel {
+  GPT_4O
+  GPT_4_TURBO
+  GPT_3_5_TURBO
+  CLAUDE_3_OPUS
+  CLAUDE_3_SONNET
+  CLAUDE_3_HAIKU
+  GEMINI_PRO
+  GEMINI_ULTRA
+  GROQ_LLAMA3
+  GROQ_MIXTRAL
+  OPENROUTER_AUTO
+  OLLAMA_CUSTOM
+}
+
+enum TranscriptionProvider {
+  DEEPGRAM
+  ASSEMBLYAI
+  WHISPER
+  CUSTOM
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELED
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  emailVerified  Boolean        @default(false)
+  name           String?
+  avatarUrl      String?
+  passwordHash   String?
+  role           UserRole       @default(USER)
+
+  accounts       Account[]
+  sessions       Session[]
+  apiKeys        ApiKey[]
+  workspaces     WorkspaceMember[]
+  ownedWorkspaces Workspace[]    @relation("WorkspaceOwner")
+  transcripts    Transcript[]
+  chats          Chat[]
+  prompts        Prompt[]
+  aiConfigs      UserAIConfig[]
+  usageRecords   UsageRecord[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+
+  subscription    Subscription?
+  stripeCustomerId String?       @unique
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  @@map("users")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String   
+  provider          String
+  providerAccountId String
+  refreshToken      String?  @db.Text
+  accessToken       String?  @db.Text
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?  @db.Text
+  sessionState      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id             String        @id @default(cuid())
+  userId         String        
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken   String        @unique
+  deviceInfo     Json?
+  ipAddress      String?
+  userAgent      String?
+  lastActiveAt   DateTime      @default(now())
+  expiresAt      DateTime
+  createdAt      DateTime      @default(now())
+
+  @@map("sessions")
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  userId    String   
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  key       String   @unique
+  lastUsed  DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  @@map("api_keys")
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String             @unique 
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier            SubscriptionTier   @default(FREE)
+  status          SubscriptionStatus @default(TRIALING)
+  stripeSubscriptionId String?       @unique
+  stripePriceId    String?
+  stripeInvoiceId  String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  trialStart      DateTime?
+  trialEnd        DateTime?
+  cancelAtPeriodEnd Boolean          @default(false)
+  canceledAt      DateTime?
+  aiCredits       Int                @default(0)
+  aiCreditsUsed   Int                @default(0)
+  aiCreditsResetAt DateTime?
+  features        Json?
+  metadata        Json?
+
+  invoices        Invoice[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  subscriptionId  String    
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  stripeInvoiceId String?
+  amount          Int
+  currency        String    @default("usd")
+  status          String
+  paidAt          DateTime?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  pdfUrl          String?
+  lines           Json?
+  metadata        Json?
+
+  createdAt       DateTime  @default(now())
+
+  @@map("invoices")
+}
+
+model UserAIConfig {
+  id                String    @id @default(cuid())
+  userId            String    
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          AIProvider @default(OPENAI)
+  model             AIModel   @default(GPT_4O)
+  apiKey            String?   @db.Text
+  apiEndpoint       String?
+  temperature       Float     @default(0.7)
+  maxTokens         Int       @default(4096)
+  topP              Float     @default(1.0)
+  isDefault         Boolean   @default(false)
+  isByok            Boolean   @default(false)
+  metadata          Json?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("user_ai_configs")
+}
+
+model Workspace {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  slug        String           @unique
+  ownerId     String           
+  owner       User             @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  isPersonal  Boolean          @default(false)
+  members     WorkspaceMember[]
+  chats       Chat[]
+  prompts     Prompt[]
+  folders     Folder[]
+  transcript  Transcript[]
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String        
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String        
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Folder {
+  id          String    @id @default(cuid())
+  workspaceId String    
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  parentId    String?   
+  parent      Folder?   @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children    Folder[]  @relation("FolderHierarchy")
+  prompts     Prompt[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("folders")
+}
+
+model Prompt {
+  id          String    @id @default(cuid())
+  workspaceId String?   
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folderId    String?   
+  folder      Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  userId      String?   
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  content     String    @db.Text
+  description String?
+  variables   Json?
+  tags        String[]
+  isPublic    Boolean   @default(false)
+  isTemplate  Boolean   @default(false)
+  usageCount  Int       @default(0)
+  aiConfigId  String?   
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@map("prompts")
+}
+
+model Chat {
+  id          String         @id @default(cuid())
+  workspaceId String?        
+  workspace   Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String         
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  aiConfigId  String?        
+  messages    ChatMessage[]
+  context     Json?
+  metadata    Json?
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  @@map("chats")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String   
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role      String
+  content   String   @db.Text
+  tokens    Int?
+  model     String?
+  latency   Int?
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@map("chat_messages")
+}
+
+model Transcript {
+  id          String            @id @default(cuid())
+  workspaceId String?           
+  workspace   Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  userId      String            
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  duration    Int?
+  provider    TranscriptionProvider @default(DEEPGRAM)
+  language    String            @default("en")
+  status      SessionStatus     @default(ACTIVE)
+  isStreaming Boolean           @default(false)
+  segments    TranscriptSegment[]
+  aiSummary   String?           @db.Text
+  metadata    Json?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+
+  @@map("transcripts")
+}
+
+model TranscriptSegment {
+  id           String    @id @default(cuid())
+  transcriptId String    
+  transcript   Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  speakerId    String
+  speakerName  String?
+  content      String    @db.Text
+  startTime    Float
+  endTime      Float
+  confidence   Float?
+  isFinal      Boolean   @default(false)
+  metadata     Json?
+
+  createdAt    DateTime  @default(now())
+
+  @@map("transcript_segments")
+}
+
+model UsageRecord {
+  id          String   @id @default(cuid())
+  userId      String   
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  tokens      Int?
+  cost        Float?
+  model       String?
+  provider    String?
+  duration    Int?
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@map("usage_records")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String   @db.Text
+  type      String
+  read      Boolean  @default(false)
+  data      Json?
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  enabled   Boolean  @default(false)
+  rules     Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("feature_flags")
+}
+
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String?
+  discountPercent Int?
+  discountAmount  Int?
+  maxRedemptions  Int?
+  currentRedemptions Int @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+
+  @@map("coupons")
+}

@@ -1,0 +1,38 @@
+[package]
+name = "natively-audio"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3", features = ["async", "threadsafe_function", "napi8"] }
+napi-derive = "3"
+cpal = "0.15"
+ringbuf = "0.4"
+rubato = "0.14"
+windows = { version = "0.58", features = [
+  "Media_Audio",
+  "Media_Capture",
+  "Media_MediaProperties",
+  "Media_Render",
+  "Devices_Enumeration",
+  "Storage_Streams",
+  "System",
+  "Win32_Media_Audio",
+  "Win32_System_Com",
+  "Win32_System_Memory",
+  "Win32_Foundation",
+  "Win32_System_Threading",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3

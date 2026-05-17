@@ -1,0 +1,15 @@
+{
+  "name": "system-audio-capture",
+  "version": "1.0.0",
+  "description": "System audio capture for Windows",
+  "main": "index.js",
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "dependencies": {
+    "bindings": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0"
+  }
+}

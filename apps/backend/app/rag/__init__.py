@@ -1,0 +1,1 @@
+from app.rag.service import get_rag_service

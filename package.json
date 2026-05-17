@@ -1,0 +1,37 @@
+{
+  "name": "ethi-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade AI desktop assistant",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
+    "db:generate": "cd apps/backend && pnpm db:generate",
+    "db:push": "cd apps/backend && pnpm db:push",
+    "db:migrate": "cd apps/backend && pnpm db:migrate",
+    "db:seed": "cd apps/backend && pnpm db:seed",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "prettier": "^3.2.0",
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "typescript": "^5.4.0"
+  }
+}

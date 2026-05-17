@@ -1,0 +1,9 @@
+pub const SAMPLE_RATE: u32 = 16000;
+pub const CHANNELS: u16 = 1;
+pub const BITS_PER_SAMPLE: u16 = 16;
+pub const FRAME_DURATION_MS: u64 = 20;
+pub const FRAME_SIZE: usize = (SAMPLE_RATE as usize * FRAME_DURATION_MS as usize) / 1000;
+pub const RING_BUFFER_CAPACITY: usize = FRAME_SIZE * 100;
+pub const VAD_THRESHOLD: f64 = 0.01;
+pub const SILENCE_ENERGY_THRESHOLD: f64 = 0.005;
+pub const MIN_SPEECH_FRAMES: u32 = 3;
